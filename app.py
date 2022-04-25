@@ -1,7 +1,7 @@
 from flask import Flask
 
 # Where the clients' projects are created
-UPLOAD_FOLDER = '/home/rentan/python-test/'
+UPLOAD_FOLDER = '/home/user/datapane-infra-challenge/'
 
 app = Flask(__name__)
 #app.secret_key = "secret key"

@@ -1,4 +1,4 @@
-#import required packages 
+#import required packages
 import os, json, docker, shutil, time
 from xml.dom.expatbuilder import Namespaces
 
@@ -15,11 +15,10 @@ ALLOWED_EXTENSIONS = set(['py'])
 run_json = []
 run_file = []
 
-#json_parent_directory = '/home/rentan/python-files' # Where the json uploads will be stored
 json_parent_directory = app.config['UPLOAD_FOLDER'] # Where the json uploads will be stored
 default_dir = "default_dir" # where the requirement files are placed
-root_dir = "/home/rentan/python-files" # Root path of the project
-client_directory = None 
+root_dir = "/home/user/datapane-infra-challenge" # Root path of the project
+client_directory = None
 client_id = 0
 
 def allowed_file(filename):
@@ -60,9 +59,9 @@ CMD ["python3", "./main.py"]'''
     # Change to the user's directory
     os.chdir(client_dir)
     # Connect to the docker env on the host machine
-    cli = docker.from_env() 
+    cli = docker.from_env()
     #while True:
-    #    try: 
+    #    try:
     #        # Build the image ot be used by the user, setting resource limits as necessary
     #        log = cli.images.build(path='./', dockerfile='Dockerfile', tag=f'{client_name}', container_limits={'memory': '60MB'})
     #        #log = cli.images.build(path='./', dockerfile='Dockerfile', tag=f'{client_name}')
@@ -74,12 +73,12 @@ CMD ["python3", "./main.py"]'''
     i, log = cli.images.build(path='./', dockerfile='Dockerfile', tag=f'{client_name}', container_limits={'memory': '60MB'})
     for line in log:
         print (line)
-        
+
     cli = docker.from_env()
     # Run a container from the image that was just built, with the same resource limits.$
     log = cli.containers.run(image=f'{client_name}', mem_limit='60mb', auto_remove=True)
     #print(log)
-    
+
 @app.route('/run-file', methods=['POST'])
 def upload_file():
     """
@@ -90,15 +89,16 @@ def upload_file():
     client is simple the clients' name that they want to use
     """
     # Change to the root directory
-    os.chdir(root_dir)
+    #os.chdir(root_dir)
+    os.chdir(os.path.expanduser(root_dir))
     # Check if any files have been uploaded and act accordingly
     if 'files[]' not in request.files:
         resp = jsonify({'message' : 'No file part in the request'})
         resp.status_code = 400
         return resp
     files = request.files.getlist('files[]') # get list of files being uploaded
-    client_name = (request.form.get('client')) #get client name 
-    
+    client_name = (request.form.get('client')) #get client name
+
     errors = {}
     success = False
     # Set client_dir to the upload folder and client's name
@@ -110,7 +110,7 @@ def upload_file():
         shutil.copytree(default_dir, client_dir)
     for file in files:	# go through list of files
         # Check if filename is allowed
-        if file and allowed_file(file.filename): 
+        if file and allowed_file(file.filename):
             # Returns a secure version of a file name
             filename = secure_filename(file.filename)
             # Save the client's project path
@@ -138,8 +138,8 @@ def upload_file():
         resp = jsonify(errors)
         resp.status_code = 500
         return resp
-    
-    
+
+
 @app.route('/run-json', methods=['POST'])
 def upload_json():
     """
@@ -147,11 +147,11 @@ def upload_json():
     The API requests needs the following 3 fields; script_name, code to be run, and client
     script_name is the name of the script to be run, as of this time it needs to be main.py
     client is simply the clients' name that they want to use
-    code is a list which the client needs to make sure is formatted properly, such as 
+    code is a list which the client needs to make sure is formatted properly, such as
     escaping quotes, backslah, tabs etc...
     """
-    os.chdir(root_dir)
-    # Append the existing list with the incoming requests 
+    os.chdir(os.path.expanduser(root_dir))
+    # Append the existing list with the incoming requests
     run_json.append(request.get_json())
     # Convert the incoming python object into a json string
     json_list = (json.dumps(run_json, indent=4, sort_keys=True))
@@ -169,12 +169,12 @@ def upload_json():
     client_name = (json_parsed['client'])
     json_extracted_script_name = (json_parsed['script_name'])
     client_directory = client_name
-    
+
     # Setting the path of the clients' project directory
     path = os.path.join(json_parent_directory, client_directory)
     client_directory = os.path.join(app.config['UPLOAD_FOLDER'], client_name) # setting client directory
     # check if client directory already exists
-    isExist = os.path.exists(client_directory) 
+    isExist = os.path.exists(client_directory)
     if not isExist: # if it doesn't exist, create it
         print(os.getcwd())
         print(f'./{default_dir}, {client_directory}')
@@ -194,7 +194,7 @@ def upload_json():
     end = time.time()
     print(end-start)
 
-    return 'OK', 200 
+    return 'OK', 200
 
 # For testing purposes, no authentication is used to GET the json
 @app.route('/run-json')
